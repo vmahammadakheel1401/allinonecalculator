@@ -1,0 +1,54 @@
+package com.example.ui.navigation
+
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.storage.AppDatabase
+import com.example.storage.SettingsManager
+import com.example.ui.screens.*
+
+@Composable
+fun AppNavigation(
+    database: AppDatabase,
+    settingsManager: SettingsManager,
+    navController: NavHostController = rememberNavController()
+) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    Scaffold(
+        bottomBar = {
+            if (currentRoute in listOf(Screen.Home.route, Screen.History.route, Screen.Settings.route)) {
+                BottomNavigationBar(navController = navController, currentRoute = currentRoute)
+            }
+        }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Home.route,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable(Screen.Home.route) { HomeScreen(navController) }
+            composable(Screen.Calculator.route) { CalculatorScreen(navController, database) }
+            composable(Screen.Currency.route) { CurrencyScreen(navController, database) }
+            composable(Screen.UnitConverter.route) { UnitConverterScreen(navController, database) }
+            composable(Screen.Discount.route) { DiscountScreen(navController, database) }
+            composable(Screen.Loan.route) { LoanScreen(navController, database) }
+            composable(Screen.DateCalc.route) { DateScreen(navController, database) }
+            composable(Screen.Age.route) { AgeScreen(navController, database) }
+            composable(Screen.BMI.route) { BMIScreen(navController, database) }
+            composable(Screen.WorldClock.route) { WorldClockScreen(navController, database) }
+            composable(Screen.History.route) { HistoryScreen(navController, database) }
+            composable(Screen.Settings.route) { SettingsScreen(navController, settingsManager, database) }
+        }
+    }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "All-in-One Calculator",
+  "description": "A single app that brings together everyday calculation and conversion tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
