@@ -1,11 +1,17 @@
 package com.example.ui.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -15,6 +21,23 @@ import androidx.navigation.compose.rememberNavController
 import com.example.storage.AppDatabase
 import com.example.storage.SettingsManager
 import com.example.ui.screens.*
+
+@Composable
+fun BannerAdPlaceholder() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Banner Ad Placeholder",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
 @Composable
 fun AppNavigation(
@@ -27,8 +50,11 @@ fun AppNavigation(
 
     Scaffold(
         bottomBar = {
-            if (currentRoute in listOf(Screen.Home.route, Screen.History.route, Screen.Settings.route)) {
-                BottomNavigationBar(navController = navController, currentRoute = currentRoute)
+            Column {
+                if (currentRoute in listOf(Screen.Home.route, Screen.History.route, Screen.Settings.route)) {
+                    BottomNavigationBar(navController = navController, currentRoute = currentRoute)
+                }
+                BannerAdPlaceholder()
             }
         }
     ) { innerPadding ->
