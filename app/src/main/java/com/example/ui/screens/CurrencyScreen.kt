@@ -18,6 +18,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -28,16 +30,19 @@ import androidx.navigation.NavController
 import com.example.calculators.CurrencyConverter
 import com.example.models.HistoryEntry
 import com.example.storage.AppDatabase
+import com.example.storage.SettingsManager
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CurrencyScreen(navController: NavController, database: AppDatabase) {
+fun CurrencyScreen(navController: NavController, database: AppDatabase, settingsManager: SettingsManager) {
     val currencies by remember { 
         derivedStateOf { 
-            val list = CurrencyConverter.rates.keys.toList().sorted()
-            listOf("USD") + list.filter { it != "USD" }
+            CurrencyConverter.getSupportedCurrencies()
         } 
     }
     
@@ -46,25 +51,44 @@ fun CurrencyScreen(navController: NavController, database: AppDatabase) {
     
     var fromValue by remember { mutableStateOf("1") }
     var toValue by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf(false) }
     
-    val decimalFormat = remember { DecimalFormat("#.######") }
     val coroutineScope = rememberCoroutineScope()
     
     fun performConversion() {
+        if (isLoading || loadError) return
         val value = fromValue.toDoubleOrNull()
         if (value != null) {
             val result = CurrencyConverter.convert(value, fromCurrency, toCurrency)
-            toValue = decimalFormat.format(result)
+            toValue = if (result == 0.0) "0" else {
+                val absResult = Math.abs(result)
+                when {
+                    absResult < 0.0001 -> "%.6f".format(result)
+                    absResult < 1 -> "%.4f".format(result)
+                    absResult < 1000 -> "%.2f".format(result)
+                    else -> "%.2f".format(result)
+                }
+            }
         } else {
             toValue = ""
         }
     }
 
-    LaunchedEffect(Unit) {
-        CurrencyConverter.fetchLiveRates()
+    suspend fun loadRates() {
+        isLoading = true
+        loadError = false
+        val success = CurrencyConverter.fetchLiveRates()
+        isLoading = false
+        loadError = !success
+        if (success) performConversion()
     }
 
-    LaunchedEffect(fromValue, fromCurrency, toCurrency, CurrencyConverter.isLive.value) {
+    LaunchedEffect(Unit) {
+        loadRates()
+    }
+
+    LaunchedEffect(fromValue, fromCurrency, toCurrency, CurrencyConverter.rates.size) {
         performConversion()
     }
 
@@ -88,12 +112,31 @@ fun CurrencyScreen(navController: NavController, database: AppDatabase) {
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text(
-                if (CurrencyConverter.isLive.value) "Using live market rates." else "Offline reference rates. May not reflect current market rates.",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (CurrencyConverter.isLive.value) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (loadError) {
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Unable to load current exchange rates.", color = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = { coroutineScope.launch { loadRates() } }) { Text("Retry") }
+                }
+            } else {
+                val timestamp = CurrencyConverter.ratesTimestamp.value
+                val dateStr = timestamp?.let { SimpleDateFormat("dd MMM, h:mm a", Locale.getDefault()).format(Date(it * 1000)) } ?: "Unknown"
+                Text(
+                    "Rates updated: $dateStr",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = stringResource(id = R.string.currency_indicative_notice),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
             
             Box(modifier = Modifier.fillMaxWidth()) {
                 Column(
@@ -132,6 +175,7 @@ fun CurrencyScreen(navController: NavController, database: AppDatabase) {
                             val tempCurrency = fromCurrency
                             fromCurrency = toCurrency
                             toCurrency = tempCurrency
+                            performConversion()
                             
                             val v = fromValue.toDoubleOrNull()
                             if (v != null) {
@@ -140,7 +184,7 @@ fun CurrencyScreen(navController: NavController, database: AppDatabase) {
                                         HistoryEntry(
                                             toolName = "Currency",
                                             inputSummary = "$fromValue $fromCurrency to $toCurrency",
-                                            result = CurrencyConverter.convert(v, fromCurrency, toCurrency).let { decimalFormat.format(it) }
+                                            result = toValue
                                         )
                                     )
                                 }
@@ -212,7 +256,7 @@ fun CurrencyCard(
                         modifier = Modifier.clickable { expanded = true }
                     ) {
                         Text(
-                            text = currency,
+                            text = "${currency} (${CurrencyConverter.getCurrencyDisplayInfo(currency).symbol ?: ""})",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -229,9 +273,14 @@ fun CurrencyCard(
                         modifier = Modifier.heightIn(max = 300.dp)
                     ) {
                         currencies.forEach { c ->
-                            val fullName = CurrencyConverter.getCurrencyName(c)
+                            val info = CurrencyConverter.getCurrencyDisplayInfo(c)
                             DropdownMenuItem(
-                                text = { Text("$c - $fullName") },
+                                text = { 
+                                    Column {
+                                        Text("${info.region} — ${info.name} ${info.symbol?.let { "($it)" } ?: ""}")
+                                        Text(info.code, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                },
                                 onClick = {
                                     onCurrencyChange(c)
                                     expanded = false

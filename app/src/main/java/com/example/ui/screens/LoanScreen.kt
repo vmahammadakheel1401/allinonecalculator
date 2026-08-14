@@ -14,13 +14,14 @@ import androidx.navigation.NavController
 import com.example.calculators.FinanceCalculators
 import com.example.models.HistoryEntry
 import com.example.storage.AppDatabase
+import com.example.storage.SettingsManager
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoanScreen(navController: NavController, database: AppDatabase) {
+fun LoanScreen(navController: NavController, database: AppDatabase, settingsManager: SettingsManager) {
     var principal by remember { mutableStateOf("50000") }
     var interestRate by remember { mutableStateOf("5.5") }
     var termInYears by remember { mutableStateOf("5") }
@@ -28,8 +29,19 @@ fun LoanScreen(navController: NavController, database: AppDatabase) {
     var result by remember { mutableStateOf<FinanceCalculators.LoanResult?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    val defaultCurrency by settingsManager.currencyFlow.collectAsState(initial = "USD ($)")
+    val currencySymbol = remember(defaultCurrency) {
+        when {
+            defaultCurrency.contains("INR") -> "₹"
+            defaultCurrency.contains("EUR") -> "€"
+            defaultCurrency.contains("GBP") -> "£"
+            defaultCurrency.contains("JPY") -> "¥"
+            else -> "$"
+        }
+    }
+    
+    val currencyFormat = remember(defaultCurrency) { java.text.DecimalFormat("#,###.##") }
     val coroutineScope = rememberCoroutineScope()
-    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale.US) }
 
     fun calculate() {
         val p = principal.toDoubleOrNull()
@@ -54,7 +66,7 @@ fun LoanScreen(navController: NavController, database: AppDatabase) {
         coroutineScope.launch {
             database.historyDao().insert(
                 HistoryEntry(
-                    toolName = "Loan Calculator",
+                    toolName = "EMI Calculator",
                     inputSummary = "Amt: ${currencyFormat.format(p)}, Rate: $r%, Term: $t yr",
                     result = "EMI: ${currencyFormat.format(res.monthlyEmi)}"
                 )
@@ -65,7 +77,7 @@ fun LoanScreen(navController: NavController, database: AppDatabase) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Loan Calculator") },
+                title = { Text("EMI Calculator") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
@@ -96,7 +108,7 @@ fun LoanScreen(navController: NavController, database: AppDatabase) {
             OutlinedTextField(
                 value = principal,
                 onValueChange = { principal = it },
-                label = { Text("Loan Amount ($)") },
+                label = { Text("Loan Amount ($currencySymbol)") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true
@@ -165,7 +177,7 @@ fun LoanScreen(navController: NavController, database: AppDatabase) {
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Text(
-                                text = currencyFormat.format(result!!.monthlyEmi),
+                                text = "$currencySymbol ${currencyFormat.format(result!!.monthlyEmi)}",
                                 style = MaterialTheme.typography.displaySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
@@ -180,7 +192,7 @@ fun LoanScreen(navController: NavController, database: AppDatabase) {
                         ) {
                             Text("Total Interest", color = MaterialTheme.colorScheme.onPrimaryContainer)
                             Text(
-                                currencyFormat.format(result!!.totalInterest),
+                                "$currencySymbol ${currencyFormat.format(result!!.totalInterest)}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -191,7 +203,7 @@ fun LoanScreen(navController: NavController, database: AppDatabase) {
                         ) {
                             Text("Total Payment", color = MaterialTheme.colorScheme.onPrimaryContainer)
                             Text(
-                                currencyFormat.format(result!!.totalPayment),
+                                "$currencySymbol ${currencyFormat.format(result!!.totalPayment)}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )

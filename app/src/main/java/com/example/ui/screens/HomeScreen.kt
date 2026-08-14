@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.ui.navigation.Screen
@@ -23,19 +24,26 @@ data class ToolItem(
     val icon: ImageVector,
     val category: String,
     val route: String,
-    val color: Color
+    val color: Color,
+    val aliases: List<String> = emptyList()
 )
 
 val allTools = listOf(
-    ToolItem("Calculator", Icons.Filled.Calculate, "Calculator", Screen.Calculator.route, Color(0xFF5C6BC0)),
-    ToolItem("Currency", Icons.Filled.CurrencyExchange, "Converter", Screen.Currency.route, Color(0xFF26A69A)),
-    ToolItem("Unit", Icons.Filled.SquareFoot, "Converter", Screen.UnitConverter.route, Color(0xFFFFA726)),
-    ToolItem("Discount", Icons.Filled.LocalOffer, "Finance", Screen.Discount.route, Color(0xFFEC407A)),
-    ToolItem("Loan", Icons.Filled.AccountBalance, "Finance", Screen.Loan.route, Color(0xFFAB47BC)),
-    ToolItem("Date", Icons.Filled.DateRange, "Date & Time", Screen.DateCalc.route, Color(0xFF29B6F6)),
-    ToolItem("Age", Icons.Filled.Cake, "Date & Time", Screen.Age.route, Color(0xFFEF5350)),
-    ToolItem("BMI", Icons.Filled.AccessibilityNew, "Health", Screen.BMI.route, Color(0xFF66BB6A)),
-    ToolItem("World Clock", Icons.Filled.Public, "Converter", Screen.WorldClock.route, Color(0xFF8D6E63))
+    ToolItem("Basic Calculator", Icons.Filled.Calculate, "Calculator", Screen.Calculator.route, Color(0xFF5C6BC0), listOf("basic", "math")),
+    ToolItem("Currency Converter", Icons.Filled.CurrencyExchange, "Converter", Screen.Currency.route, Color(0xFF26A69A), listOf("money", "exchange", "currency")),
+    ToolItem("Unit Converter", Icons.Filled.SquareFoot, "Converter", Screen.UnitConverter.route, Color(0xFFFFA726), listOf("unit", "conversion")),
+    ToolItem("Discount Calculator", Icons.Filled.LocalOffer, "Finance", Screen.Discount.route, Color(0xFFEC407A), listOf("discount", "offer", "percent")),
+    ToolItem("Loan / EMI Calculator", Icons.Filled.AccountBalance, "Finance", Screen.Loan.route, Color(0xFFAB47BC), listOf("loan", "emi", "finance")),
+    ToolItem("Date Calculator", Icons.Filled.DateRange, "Date & Time", Screen.DateCalc.route, Color(0xFF29B6F6), listOf("date", "time")),
+    ToolItem("Age Calculator", Icons.Filled.Cake, "Date & Time", Screen.Age.route, Color(0xFFEF5350), listOf("age", "birthday")),
+    ToolItem("SGPA / CGPA Calculator", Icons.Filled.School, "Calculator", Screen.SGPA.route, Color(0xFF5C6BC0), listOf("sgpa", "cgpa", "college", "grade")),
+    ToolItem("Fuel Cost Calculator", Icons.Filled.LocalGasStation, "Calculator", Screen.Fuel.route, Color(0xFF26A69A), listOf("fuel", "gas", "cost")),
+    ToolItem("GST Calculator", Icons.Filled.Receipt, "Finance", Screen.GST.route, Color(0xFFFFA726), listOf("gst", "tax")),
+    ToolItem("SIP Calculator", Icons.Filled.TrendingUp, "Finance", Screen.SIP.route, Color(0xFFEC407A), listOf("sip", "investment")),
+    ToolItem("Salary Calculator", Icons.Filled.AttachMoney, "Finance", Screen.Salary.route, Color(0xFFAB47BC), listOf("salary", "take-home")),
+    ToolItem("Inflation Calculator", Icons.Filled.TrendingDown, "Finance", Screen.Inflation.route, Color(0xFF29B6F6), listOf("inflation", "future")),
+    ToolItem("Unit Price Calculator", Icons.Filled.ShoppingCart, "Calculator", Screen.UnitPrice.route, Color(0xFFEF5350), listOf("unit price", "shopping", "compare")),
+    ToolItem("Freelance Rate Calculator", Icons.Filled.Work, "Finance", Screen.Freelance.route, Color(0xFF66BB6A), listOf("freelance", "hourly"))
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,13 +55,18 @@ fun HomeScreen(navController: NavController) {
 
     val filteredTools = allTools.filter {
         (selectedCategory == "All" || it.category == selectedCategory) &&
-        it.title.contains(searchQuery, ignoreCase = true)
+        (it.title.contains(searchQuery, ignoreCase = true) || it.aliases.any { alias -> alias.contains(searchQuery, ignoreCase = true) })
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("All-in-One Calculator") }
+                title = {
+                    Column {
+                        Text("All-in-One Calculator")
+                        Text("Everyday calculations in one place", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -118,7 +131,7 @@ fun ToolCard(tool: ToolItem, onClick: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(8.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -138,7 +151,9 @@ fun ToolCard(tool: ToolItem, onClick: () -> Unit) {
             Text(
                 text = tool.title,
                 style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

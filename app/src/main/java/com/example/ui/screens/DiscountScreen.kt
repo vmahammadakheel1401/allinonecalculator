@@ -14,13 +14,14 @@ import androidx.navigation.NavController
 import com.example.calculators.FinanceCalculators
 import com.example.models.HistoryEntry
 import com.example.storage.AppDatabase
+import com.example.storage.SettingsManager
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiscountScreen(navController: NavController, database: AppDatabase) {
+fun DiscountScreen(navController: NavController, database: AppDatabase, settingsManager: SettingsManager) {
     var originalPrice by remember { mutableStateOf("") }
     var discountPercent by remember { mutableStateOf("") }
     var additionalDiscount by remember { mutableStateOf("") }
@@ -28,8 +29,19 @@ fun DiscountScreen(navController: NavController, database: AppDatabase) {
     var result by remember { mutableStateOf<FinanceCalculators.DiscountResult?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    val defaultCurrency by settingsManager.currencyFlow.collectAsState(initial = "USD ($)")
+    val currencySymbol = remember(defaultCurrency) {
+        when {
+            defaultCurrency.contains("INR") -> "₹"
+            defaultCurrency.contains("EUR") -> "€"
+            defaultCurrency.contains("GBP") -> "£"
+            defaultCurrency.contains("JPY") -> "¥"
+            else -> "$"
+        }
+    }
+    
+    val currencyFormat = remember(defaultCurrency) { java.text.DecimalFormat("#,###.##") }
     val coroutineScope = rememberCoroutineScope()
-    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale.US) }
 
     fun calculate() {
         val op = originalPrice.toDoubleOrNull()
@@ -104,7 +116,7 @@ fun DiscountScreen(navController: NavController, database: AppDatabase) {
             OutlinedTextField(
                 value = originalPrice,
                 onValueChange = { originalPrice = it },
-                label = { Text("Original Price ($)") },
+                label = { Text("Original Price ($currencySymbol)") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true
@@ -172,7 +184,7 @@ fun DiscountScreen(navController: NavController, database: AppDatabase) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = currencyFormat.format(result!!.finalPrice),
+                            text = "$currencySymbol ${currencyFormat.format(result!!.finalPrice)}",
                             style = MaterialTheme.typography.displayMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
@@ -192,7 +204,7 @@ fun DiscountScreen(navController: NavController, database: AppDatabase) {
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
                             )
                             Text(
-                                currencyFormat.format(result!!.amountSaved),
+                                "$currencySymbol ${currencyFormat.format(result!!.amountSaved)}",
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold

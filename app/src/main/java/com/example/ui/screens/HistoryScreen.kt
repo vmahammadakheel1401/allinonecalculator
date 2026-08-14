@@ -28,15 +28,21 @@ fun HistoryScreen(navController: NavController, database: AppDatabase) {
 
     fun navigateToTool(toolName: String) {
         val route = when {
-            toolName.contains("Calculator", ignoreCase = true) -> Screen.Calculator.route
+            toolName.contains("Calculator", ignoreCase = true) && !toolName.contains("Discount", ignoreCase = true) && !toolName.contains("Loan", ignoreCase = true) && !toolName.contains("Date", ignoreCase = true) && !toolName.contains("Age", ignoreCase = true) && !toolName.contains("SGPA", ignoreCase = true) && !toolName.contains("Fuel", ignoreCase = true) && !toolName.contains("GST", ignoreCase = true) && !toolName.contains("SIP", ignoreCase = true) && !toolName.contains("Salary", ignoreCase = true) && !toolName.contains("Inflation", ignoreCase = true) && !toolName.contains("Unit Price", ignoreCase = true) && !toolName.contains("Freelance", ignoreCase = true) -> Screen.Calculator.route
             toolName.contains("Currency", ignoreCase = true) -> Screen.Currency.route
-            toolName.contains("Unit", ignoreCase = true) -> Screen.UnitConverter.route
+            toolName.contains("Unit Converter", ignoreCase = true) -> Screen.UnitConverter.route
             toolName.contains("Discount", ignoreCase = true) -> Screen.Discount.route
             toolName.contains("Loan", ignoreCase = true) -> Screen.Loan.route
             toolName.contains("Date", ignoreCase = true) -> Screen.DateCalc.route
             toolName.contains("Age", ignoreCase = true) -> Screen.Age.route
-            toolName.contains("BMI", ignoreCase = true) -> Screen.BMI.route
-            toolName.contains("World", ignoreCase = true) || toolName.contains("Clock", ignoreCase = true) -> Screen.WorldClock.route
+            toolName.contains("SGPA", ignoreCase = true) -> Screen.SGPA.route
+            toolName.contains("Fuel", ignoreCase = true) -> Screen.Fuel.route
+            toolName.contains("GST", ignoreCase = true) -> Screen.GST.route
+            toolName.contains("SIP", ignoreCase = true) -> Screen.SIP.route
+            toolName.contains("Salary", ignoreCase = true) -> Screen.Salary.route
+            toolName.contains("Inflation", ignoreCase = true) -> Screen.Inflation.route
+            toolName.contains("Unit Price", ignoreCase = true) -> Screen.UnitPrice.route
+            toolName.contains("Freelance", ignoreCase = true) -> Screen.Freelance.route
             else -> null
         }
         if (route != null) {

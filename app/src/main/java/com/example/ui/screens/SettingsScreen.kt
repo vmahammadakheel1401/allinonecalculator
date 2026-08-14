@@ -2,6 +2,8 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -17,13 +19,16 @@ fun SettingsScreen(navController: NavController, settingsManager: SettingsManage
     val theme by settingsManager.themeFlow.collectAsState(initial = "System default")
     val currency by settingsManager.currencyFlow.collectAsState(initial = "USD ($)")
     val unitSystem by settingsManager.unitSystemFlow.collectAsState(initial = "Metric")
+    val precision by settingsManager.precisionFlow.collectAsState(initial = 2)
     
     val coroutineScope = rememberCoroutineScope()
     var showThemeDialog by remember { mutableStateOf(false) }
     var showClearHistoryDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showUnitDialog by remember { mutableStateOf(false) }
+    var showPrecisionDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showPrivacyDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -36,6 +41,8 @@ fun SettingsScreen(navController: NavController, settingsManager: SettingsManage
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 16.dp)
         ) {
             ListItem(
                 headlineContent = { Text("Theme") },
@@ -56,9 +63,25 @@ fun SettingsScreen(navController: NavController, settingsManager: SettingsManage
             )
             Divider()
             ListItem(
+                headlineContent = { Text("Decimal Precision") },
+                supportingContent = { Text(precision.toString()) },
+                modifier = Modifier.clickable { showPrecisionDialog = true }
+            )
+            Divider()
+            ListItem(
                 headlineContent = { Text("Clear History") },
                 supportingContent = { Text("Remove all calculation records") },
                 modifier = Modifier.clickable { showClearHistoryDialog = true }
+            )
+            Divider()
+            ListItem(
+                headlineContent = { Text("Privacy Policy") },
+                modifier = Modifier.clickable { showPrivacyDialog = true }
+            )
+            Divider()
+            ListItem(
+                headlineContent = { Text("Rate the App") },
+                modifier = Modifier.clickable { /* Handle rating */ }
             )
             Divider()
             ListItem(
@@ -167,6 +190,49 @@ fun SettingsScreen(navController: NavController, settingsManager: SettingsManage
                 },
                 confirmButton = {
                     TextButton(onClick = { showAboutDialog = false }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+        
+        if (showPrecisionDialog) {
+            AlertDialog(
+                onDismissRequest = { showPrecisionDialog = false },
+                title = { Text("Decimal Precision") },
+                text = {
+                    Column {
+                        (0..5).forEach { option ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        coroutineScope.launch { settingsManager.setPrecision(option) }
+                                        showPrecisionDialog = false
+                                    }
+                                    .padding(vertical = 12.dp)
+                            ) {
+                                RadioButton(
+                                    selected = precision == option,
+                                    onClick = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(option.toString())
+                            }
+                        }
+                    }
+                },
+                confirmButton = {}
+            )
+        }
+        
+        if (showPrivacyDialog) {
+            AlertDialog(
+                onDismissRequest = { showPrivacyDialog = false },
+                title = { Text("Privacy Policy") },
+                text = { Text("This app does not collect any personal data. All calculations are performed locally on your device.") },
+                confirmButton = {
+                    TextButton(onClick = { showPrivacyDialog = false }) {
                         Text("OK")
                     }
                 }

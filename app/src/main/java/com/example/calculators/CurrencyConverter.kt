@@ -13,7 +13,8 @@ import retrofit2.http.GET
 data class ExchangeRateResponse(
     val result: String,
     val base_code: String,
-    val rates: Map<String, Double>
+    val rates: Map<String, Double>,
+    val time_last_update_unix: Long?
 )
 
 interface ExchangeRateApi {
@@ -33,82 +34,97 @@ object CurrencyConverter {
 
     private val api = retrofit.create(ExchangeRateApi::class.java)
 
-    // Offline reference rates (Base: USD)
-    private val fallbackRates = mapOf(
-        "USD" to 1.0,
-        "EUR" to 0.92,
-        "GBP" to 0.79,
-        "JPY" to 150.0,
-        "INR" to 83.0,
-        "AUD" to 1.52,
-        "CAD" to 1.35,
-        "CHF" to 0.88,
-        "CNY" to 7.19,
-        "SGD" to 1.34,
-        "MXN" to 17.05,
-        "BRL" to 5.0,
-        "ZAR" to 18.9,
-        "NZD" to 1.65,
-        "HKD" to 7.82,
-        "KRW" to 1340.0,
-        "TRY" to 31.0,
-        "AED" to 3.67,
-        "SAR" to 3.75,
-        "THB" to 35.8
+    val rates = mutableStateMapOf<String, Double>()
+    var ratesTimestamp = mutableStateOf<Long?>(null)
+
+    data class CurrencyInfo(val code: String, val name: String, val region: String, val symbol: String?)
+
+    private val currencyMetadata = mapOf(
+        "USD" to CurrencyInfo("USD", "Dollar", "United States", "$"),
+        "AED" to CurrencyInfo("AED", "Dirham", "United Arab Emirates", "د.إ"),
+        "INR" to CurrencyInfo("INR", "Rupee", "India", "₹"),
+        "EUR" to CurrencyInfo("EUR", "Euro", "Eurozone", "€"),
+        "GBP" to CurrencyInfo("GBP", "Pound", "United Kingdom", "£"),
+        "JPY" to CurrencyInfo("JPY", "Yen", "Japan", "¥"),
+        "CNY" to CurrencyInfo("CNY", "Yuan", "China", "¥"),
+        "AUD" to CurrencyInfo("AUD", "Dollar", "Australia", "A$"),
+        "CAD" to CurrencyInfo("CAD", "Dollar", "Canada", "C$"),
+        "SGD" to CurrencyInfo("SGD", "Dollar", "Singapore", "S$"),
+        "SAR" to CurrencyInfo("SAR", "Riyal", "Saudi Arabia", "﷼"),
+        "CHF" to CurrencyInfo("CHF", "Franc", "Switzerland", "CHF"),
+        "KRW" to CurrencyInfo("KRW", "Won", "South Korea", "₩"),
+        "THB" to CurrencyInfo("THB", "Baht", "Thailand", "฿"),
+        "MYR" to CurrencyInfo("MYR", "Ringgit", "Malaysia", "RM"),
+        "IDR" to CurrencyInfo("IDR", "Rupiah", "Indonesia", "Rp"),
+        "PHP" to CurrencyInfo("PHP", "Peso", "Philippines", "₱"),
+        "VND" to CurrencyInfo("VND", "Dong", "Vietnam", "₫"),
+        "RUB" to CurrencyInfo("RUB", "Ruble", "Russia", "₽"),
+        "AFN" to CurrencyInfo("AFN", "Afghani", "Afghanistan", "؋"),
+        "ALL" to CurrencyInfo("ALL", "Lek", "Albania", "L"),
+        "DZD" to CurrencyInfo("DZD", "Dinar", "Algeria", "دج"),
+        "ARS" to CurrencyInfo("ARS", "Peso", "Argentina", "$"),
+        "BRL" to CurrencyInfo("BRL", "Real", "Brazil", "R$"),
+        "XAF" to CurrencyInfo("XAF", "CFA Franc", "Central Africa", "FCFA"),
+        "XOF" to CurrencyInfo("XOF", "CFA Franc", "West Africa", "CFA"),
+        "XCD" to CurrencyInfo("XCD", "East Caribbean Dollar", "East Caribbean", "EC$"),
+        "MXN" to CurrencyInfo("MXN", "Peso", "Mexico", "MX$"),
+        "ZAR" to CurrencyInfo("ZAR", "Rand", "South Africa", "R"),
+        "TRY" to CurrencyInfo("TRY", "Lira", "Türkiye", "₺"),
+        "NZD" to CurrencyInfo("NZD", "Dollar", "New Zealand", "$"),
+        "HKD" to CurrencyInfo("HKD", "Dollar", "Hong Kong", "$")
     )
 
-    val rates = mutableStateMapOf<String, Double>().apply {
-        putAll(fallbackRates)
+    private val priorityCodes = listOf("USD", "AED", "INR", "EUR", "GBP", "JPY", "CNY", "AUD", "CAD", "SGD")
+
+    fun getSupportedCurrencies(): List<String> {
+        val allCodes = rates.keys.toList()
+        val sorted = allCodes.sortedWith(Comparator { a, b ->
+            val aPriority = priorityCodes.indexOf(a)
+            val bPriority = priorityCodes.indexOf(b)
+            
+            if (aPriority != -1 && bPriority != -1) return@Comparator aPriority.compareTo(bPriority)
+            if (aPriority != -1) return@Comparator -1
+            if (bPriority != -1) return@Comparator 1
+            
+            val infoA = getCurrencyDisplayInfo(a)
+            val infoB = getCurrencyDisplayInfo(b)
+            infoA.region.compareTo(infoB.region)
+        })
+        return sorted
     }
 
-    fun getCurrencyName(code: String): String {
-        return when (code) {
-            "USD" -> "United States - Dollar"
-            "EUR" -> "European Union - Euro"
-            "GBP" -> "United Kingdom - Pound"
-            "JPY" -> "Japan - Yen"
-            "INR" -> "India - Rupee"
-            "AUD" -> "Australia - Dollar"
-            "CAD" -> "Canada - Dollar"
-            "CHF" -> "Switzerland - Franc"
-            "CNY" -> "China - Yuan"
-            "SGD" -> "Singapore - Dollar"
-            "MXN" -> "Mexico - Peso"
-            "BRL" -> "Brazil - Real"
-            "ZAR" -> "South Africa - Rand"
-            "NZD" -> "New Zealand - Dollar"
-            "HKD" -> "Hong Kong - Dollar"
-            "KRW" -> "South Korea - Won"
-            "TRY" -> "Turkey - Lira"
-            "AED" -> "UAE - Dirham"
-            "SAR" -> "Saudi Arabia - Riyal"
-            "THB" -> "Thailand - Baht"
-            else -> code
-        }
+    fun getCurrencyDisplayInfo(code: String): CurrencyInfo {
+        return currencyMetadata[code] ?: CurrencyInfo(code, "Currency", "Other", null)
     }
 
     val isLive = mutableStateOf(false)
 
-    suspend fun fetchLiveRates() {
-        try {
+    suspend fun fetchLiveRates(): Boolean {
+        return try {
             withContext(Dispatchers.IO) {
                 val response = api.getLatestRates()
-                if (response.result == "success" || response.rates.isNotEmpty()) {
+                if (response.result == "success" && response.rates.isNotEmpty()) {
                     withContext(Dispatchers.Main) {
+                        rates.clear()
                         rates.putAll(response.rates)
+                        ratesTimestamp.value = response.time_last_update_unix
                         isLive.value = true
+                        true
                     }
+                } else {
+                    false
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            // Keep fallback rates if network fails
+            false
         }
     }
 
     fun convert(value: Double, fromCurrency: String, toCurrency: String): Double {
-        val fromRate = rates[fromCurrency] ?: 1.0
-        val toRate = rates[toCurrency] ?: 1.0
+        if (fromCurrency == toCurrency) return value
+        val fromRate = rates[fromCurrency] ?: return 0.0
+        val toRate = rates[toCurrency] ?: return 0.0
         
         val valueInUsd = value / fromRate
         return valueInUsd * toRate

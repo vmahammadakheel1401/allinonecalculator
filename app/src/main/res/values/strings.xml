@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">All-in-One Calculator</string>
+    <string name="currency_indicative_notice">Indicative rate. Rates may vary slightly by provider. Please cross-check before important transactions.</string>
 </resources>
