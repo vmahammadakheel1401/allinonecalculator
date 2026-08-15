@@ -71,7 +71,20 @@ object CurrencyConverter {
         "ZAR" to CurrencyInfo("ZAR", "Rand", "South Africa", "R"),
         "TRY" to CurrencyInfo("TRY", "Lira", "Türkiye", "₺"),
         "NZD" to CurrencyInfo("NZD", "Dollar", "New Zealand", "$"),
-        "HKD" to CurrencyInfo("HKD", "Dollar", "Hong Kong", "$")
+        "HKD" to CurrencyInfo("HKD", "Dollar", "Hong Kong", "$"),
+        "ARS" to CurrencyInfo("ARS", "Peso", "Argentina", "$"),
+        "CLP" to CurrencyInfo("CLP", "Peso", "Chile", "$"),
+        "COP" to CurrencyInfo("COP", "Peso", "Colombia", "$"),
+        "PEN" to CurrencyInfo("PEN", "Sol", "Peru", "S/"),
+        "UYW" to CurrencyInfo("UYW", "Unidad", "Uruguay", null),
+        "DKK" to CurrencyInfo("DKK", "Krone", "Denmark", "kr"),
+        "SEK" to CurrencyInfo("SEK", "Krona", "Sweden", "kr"),
+        "NOK" to CurrencyInfo("NOK", "Krone", "Norway", "kr"),
+        "PLN" to CurrencyInfo("PLN", "Zloty", "Poland", "zł"),
+        "HUF" to CurrencyInfo("HUF", "Forint", "Hungary", "Ft"),
+        "CZK" to CurrencyInfo("CZK", "Koruna", "Czechia", "Kč"),
+        "RON" to CurrencyInfo("RON", "Leu", "Romania", "lei"),
+        "BGN" to CurrencyInfo("BGN", "Lev", "Bulgaria", "лв")
     )
 
     private val priorityCodes = listOf("USD", "AED", "INR", "EUR", "GBP", "JPY", "CNY", "AUD", "CAD", "SGD")

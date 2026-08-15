@@ -14,10 +14,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.storage.AppDatabase
+import com.example.storage.SettingsManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UnitPriceScreen(navController: NavHostController, database: AppDatabase) {
+fun UnitPriceScreen(navController: NavHostController, database: AppDatabase, settingsManager: SettingsManager) {
     var price1 by remember { mutableStateOf("") }
     var qty1 by remember { mutableStateOf("") }
     var unit1 by remember { mutableStateOf("g") }
@@ -26,8 +27,17 @@ fun UnitPriceScreen(navController: NavHostController, database: AppDatabase) {
     var unit2 by remember { mutableStateOf("g") }
     var result by remember { mutableStateOf("") }
     var validationError by remember { mutableStateOf("") }
-
+    
+    val currency by settingsManager.currencyFlow.collectAsState(initial = "USD ($)")
+    val currencySymbol = remember(currency) {
+        val start = currency.indexOf("(")
+        val end = currency.indexOf(")")
+        if (start != -1 && end != -1) currency.substring(start + 1, end) else "$"
+    }
+    
     val units = listOf("g", "kg", "ml", "L", "pcs")
+    
+    // Replace '₹' with currencySymbol in compare function
 
     fun getFactor(unit: String): Double = when (unit) {
         "kg" -> 1000.0
@@ -66,12 +76,12 @@ fun UnitPriceScreen(navController: NavHostController, database: AppDatabase) {
 
         result = when {
             normalizedPrice1 < normalizedPrice2 -> 
-                "Product 1 is better value (₹%.2f/%s vs ₹%.2f/%s)\nSave ₹%.2f/%s with Product 1".format(
+                "Product 1 is better value ($currencySymbol%.2f/%s vs $currencySymbol%.2f/%s)\nSave $currencySymbol%.2f/%s with Product 1".format(
                     normalizedPrice1, betterUnit, normalizedPrice2, betterUnit, (normalizedPrice2 - normalizedPrice1), betterUnit)
             normalizedPrice2 < normalizedPrice1 -> 
-                "Product 2 is better value (₹%.2f/%s vs ₹%.2f/%s)\nSave ₹%.2f/%s with Product 2".format(
+                "Product 2 is better value ($currencySymbol%.2f/%s vs $currencySymbol%.2f/%s)\nSave $currencySymbol%.2f/%s with Product 2".format(
                     normalizedPrice2, betterUnit, normalizedPrice1, betterUnit, (normalizedPrice1 - normalizedPrice2), betterUnit)
-            else -> "Both are equal value (₹%.2f/%s)".format(normalizedPrice1, betterUnit)
+            else -> "Both are equal value ($currencySymbol%.2f/%s)".format(normalizedPrice1, betterUnit)
         }
     }
 

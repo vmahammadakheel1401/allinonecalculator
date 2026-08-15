@@ -75,10 +75,10 @@ fun AppNavigation(
             composable(Screen.Fuel.route) { FuelCostScreen(navController, database) }
             composable(Screen.GST.route) { GSTScreen(navController, database) }
             composable(Screen.SIP.route) { SIPScreen(navController, database) }
-            composable(Screen.Salary.route) { SalaryScreen(navController, database) }
+            composable(Screen.Salary.route) { SalaryScreen(navController, database, settingsManager) }
             composable(Screen.Inflation.route) { InflationScreen(navController, database) }
-            composable(Screen.UnitPrice.route) { UnitPriceScreen(navController, database) }
-            composable(Screen.Freelance.route) { FreelanceRateScreen(navController, database) }
+            composable(Screen.UnitPrice.route) { UnitPriceScreen(navController, database, settingsManager) }
+            composable(Screen.Freelance.route) { FreelanceRateScreen(navController, database, settingsManager) }
             composable(Screen.History.route) { HistoryScreen(navController, database) }
             composable(Screen.Settings.route) { SettingsScreen(navController, settingsManager, database) }
         }

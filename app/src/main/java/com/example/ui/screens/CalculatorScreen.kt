@@ -28,12 +28,38 @@ import java.text.DecimalFormat
 fun CalculatorScreen(navController: NavController, database: AppDatabase) {
     var expression by remember { mutableStateOf("") }
     var result by remember { mutableStateOf("") }
+    var instantResult by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
     var isScientific by remember { mutableStateOf(false) }
     
     val coroutineScope = rememberCoroutineScope()
     val evaluator = remember { ExpressionEvaluator() }
-    val decimalFormat = remember { DecimalFormat("#.########") }
+    
+    // Formatter for thousands separator
+    val numberFormatter = remember { DecimalFormat("#,###.########") }
+
+    LaunchedEffect(expression) {
+        if (expression.isNotEmpty()) {
+            try {
+                // Try to evaluate to show instant result
+                val eval = evaluator.evaluate(expression)
+                // Only show if it's a valid number and doesn't equal the last finalized result
+                val formatted = numberFormatter.format(eval)
+                instantResult = if (formatted != result) formatted else ""
+            } catch (e: Exception) {
+                instantResult = ""
+            }
+        } else {
+            instantResult = ""
+        }
+    }
+
+    fun formatNumber(input: String): String {
+        return input.replace(Regex("\\d+(?:\\.\\d+)?")) { match ->
+            val number = match.value.toDoubleOrNull() ?: return@replace match.value
+            numberFormatter.format(number)
+        }
+    }
 
     fun onAction(action: String) {
         when (action) {
@@ -51,7 +77,8 @@ fun CalculatorScreen(navController: NavController, database: AppDatabase) {
                 if (expression.isNotEmpty()) {
                     try {
                         val evalResult = evaluator.evaluate(expression)
-                        result = decimalFormat.format(evalResult)
+                        result = numberFormatter.format(evalResult)
+                        instantResult = ""
                         isError = false
                         
                         coroutineScope.launch {
@@ -124,11 +151,20 @@ fun CalculatorScreen(navController: NavController, database: AppDatabase) {
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = expression,
+                    text = formatNumber(expression),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.End
                 )
+                if (instantResult.isNotEmpty()) {
+                    Text(
+                        text = instantResult,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        textAlign = TextAlign.End,
+                        maxLines = 1
+                    )
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = result,

@@ -45,8 +45,18 @@ fun CurrencyScreen(navController: NavController, database: AppDatabase, settings
             CurrencyConverter.getSupportedCurrencies()
         } 
     }
+
+    val localeCurrencyCode = remember {
+        try {
+            java.util.Currency.getInstance(java.util.Locale.getDefault()).currencyCode
+        } catch (e: Exception) {
+            "USD"
+        }
+    }
     
-    var fromCurrency by remember { mutableStateOf("USD") }
+    val initialFromCurrency = if (currencies.contains(localeCurrencyCode)) localeCurrencyCode else "USD"
+    
+    var fromCurrency by remember { mutableStateOf(initialFromCurrency) }
     var toCurrency by remember { mutableStateOf("INR") }
     
     var fromValue by remember { mutableStateOf("1") }
