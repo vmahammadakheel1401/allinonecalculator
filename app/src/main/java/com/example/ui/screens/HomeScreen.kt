@@ -65,7 +65,7 @@ fun HomeScreen(navController: NavController) {
             TopAppBar(
                 title = {
                     Column {
-                        Text("All-in-One Calculator (Updated)")
+                        Text("All-in-One Calculator")
                         Text("Everyday calculations", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
