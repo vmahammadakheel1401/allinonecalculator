@@ -90,11 +90,6 @@ fun DiscountScreen(navController: NavController, database: AppDatabase, settings
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
-                },
-                actions = {
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Filled.Search, contentDescription = "Search")
-                    }
                 }
             )
         }

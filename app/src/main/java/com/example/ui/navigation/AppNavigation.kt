@@ -81,6 +81,8 @@ fun AppNavigation(
             composable(Screen.Freelance.route) { FreelanceRateScreen(navController, database, settingsManager) }
             composable(Screen.History.route) { HistoryScreen(navController, database) }
             composable(Screen.Settings.route) { SettingsScreen(navController, settingsManager, database) }
+            composable(Screen.BMI.route) { BMIScreen(navController, database) }
+            composable(Screen.Ovulation.route) { OvulationScreen(navController, database) }
         }
     }
 }

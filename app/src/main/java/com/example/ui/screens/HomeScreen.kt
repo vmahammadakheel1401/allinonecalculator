@@ -43,7 +43,9 @@ val allTools = listOf(
     ToolItem("Salary Calculator", Icons.Filled.AttachMoney, "Finance", Screen.Salary.route, Color(0xFFAB47BC), listOf("salary", "take-home")),
     ToolItem("Inflation Calculator", Icons.Filled.TrendingDown, "Finance", Screen.Inflation.route, Color(0xFF29B6F6), listOf("inflation", "future")),
     ToolItem("Unit Price Calculator", Icons.Filled.ShoppingCart, "Calculator", Screen.UnitPrice.route, Color(0xFFEF5350), listOf("unit price", "shopping", "compare")),
-    ToolItem("Freelance Rate Calculator", Icons.Filled.Work, "Finance", Screen.Freelance.route, Color(0xFF66BB6A), listOf("freelance", "hourly"))
+    ToolItem("Freelance Rate Calculator", Icons.Filled.Work, "Finance", Screen.Freelance.route, Color(0xFF66BB6A), listOf("freelance", "hourly")),
+    ToolItem("BMI Calculator", Icons.Filled.FitnessCenter, "Health", Screen.BMI.route, Color(0xFF4CAF50), listOf("bmi", "health", "weight")),
+    ToolItem("Ovulation Calculator", Icons.Filled.PregnantWoman, "Health", Screen.Ovulation.route, Color(0xFFF06292), listOf("ovulation", "period", "menstrual", "health"))
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,8 +65,8 @@ fun HomeScreen(navController: NavController) {
             TopAppBar(
                 title = {
                     Column {
-                        Text("All-in-One Calculator")
-                        Text("Everyday calculations in one place", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("All-in-One Calculator (Updated)")
+                        Text("Everyday calculations", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             )

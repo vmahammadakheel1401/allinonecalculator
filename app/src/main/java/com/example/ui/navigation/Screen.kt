@@ -19,4 +19,6 @@ sealed class Screen(val route: String) {
     object Freelance : Screen("freelance")
     object History : Screen("history")
     object Settings : Screen("settings")
+    object BMI : Screen("bmi")
+    object Ovulation : Screen("ovulation")
 }

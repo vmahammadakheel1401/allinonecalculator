@@ -4,8 +4,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -29,6 +33,9 @@ fun SettingsScreen(navController: NavController, settingsManager: SettingsManage
     var showPrecisionDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
+    var showRateDialog by remember { mutableStateOf(false) }
+    var userRating by remember { mutableStateOf(5) }
+    var ratingSubmitted by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -81,7 +88,11 @@ fun SettingsScreen(navController: NavController, settingsManager: SettingsManage
             Divider()
             ListItem(
                 headlineContent = { Text("Rate the App") },
-                modifier = Modifier.clickable { /* Handle rating */ }
+                supportingContent = { Text("Leave your rating and feedback") },
+                modifier = Modifier.clickable { 
+                    ratingSubmitted = false
+                    showRateDialog = true 
+                }
             )
             Divider()
             ListItem(
@@ -257,6 +268,58 @@ fun SettingsScreen(navController: NavController, settingsManager: SettingsManage
                 dismissButton = {
                     TextButton(onClick = { showClearHistoryDialog = false }) {
                         Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        if (showRateDialog) {
+            AlertDialog(
+                onDismissRequest = { showRateDialog = false },
+                title = { Text("Rate the App") },
+                text = {
+                    if (ratingSubmitted) {
+                        Text("Thank you for your rating and feedback! ⭐")
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("How would you rate your experience?")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                (1..5).forEach { star ->
+                                    IconButton(onClick = { userRating = star }) {
+                                        Icon(
+                                            imageVector = if (star <= userRating) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                                            contentDescription = "$star Star",
+                                            tint = if (star <= userRating) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    if (ratingSubmitted) {
+                        TextButton(onClick = { showRateDialog = false }) {
+                            Text("Close")
+                        }
+                    } else {
+                        TextButton(onClick = { ratingSubmitted = true }) {
+                            Text("Submit")
+                        }
+                    }
+                },
+                dismissButton = {
+                    if (!ratingSubmitted) {
+                        TextButton(onClick = { showRateDialog = false }) {
+                            Text("Cancel")
+                        }
                     }
                 }
             )
