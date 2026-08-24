@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.storage.AppDatabase
+import com.example.utilities.NumberCommaVisualTransformation
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,8 +90,22 @@ fun BMIScreen(navController: NavController, database: AppDatabase) {
 
             OutlinedTextField(
                 value = weightInput,
-                onValueChange = { weightInput = it },
+                onValueChange = { input ->
+                    val filtered = buildString {
+                        var hasDecimal = false
+                        for (char in input) {
+                            if (char.isDigit()) append(char)
+                            else if (char == '.' && !hasDecimal) {
+                                append(char)
+                                hasDecimal = true
+                            }
+                        }
+                    }
+                    weightInput = filtered
+                },
+                visualTransformation = remember { NumberCommaVisualTransformation(false) },
                 label = { Text(if (isMetric) "Weight (kg)" else "Weight (lbs)") },
+                suffix = { Text(if (isMetric) "kg" else "lbs") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -98,8 +113,22 @@ fun BMIScreen(navController: NavController, database: AppDatabase) {
 
             OutlinedTextField(
                 value = heightInput,
-                onValueChange = { heightInput = it },
+                onValueChange = { input ->
+                    val filtered = buildString {
+                        var hasDecimal = false
+                        for (char in input) {
+                            if (char.isDigit()) append(char)
+                            else if (char == '.' && !hasDecimal) {
+                                append(char)
+                                hasDecimal = true
+                            }
+                        }
+                    }
+                    heightInput = filtered
+                },
+                visualTransformation = remember { NumberCommaVisualTransformation(false) },
                 label = { Text(if (isMetric) "Height (cm)" else "Height (inches)") },
+                suffix = { Text(if (isMetric) "cm" else "in") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true

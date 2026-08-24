@@ -15,6 +15,7 @@ import com.example.calculators.FinanceCalculators
 import com.example.models.HistoryEntry
 import com.example.storage.AppDatabase
 import com.example.storage.SettingsManager
+import com.example.utilities.NumberCommaVisualTransformation
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
@@ -102,28 +103,68 @@ fun LoanScreen(navController: NavController, database: AppDatabase, settingsMana
 
             OutlinedTextField(
                 value = principal,
-                onValueChange = { principal = it },
+                onValueChange = { input ->
+                    val filtered = buildString {
+                        var hasDecimal = false
+                        for (char in input) {
+                            if (char.isDigit()) append(char)
+                            else if (char == '.' && !hasDecimal) {
+                                append(char)
+                                hasDecimal = true
+                            }
+                        }
+                    }
+                    principal = filtered
+                },
+                visualTransformation = remember(defaultCurrency) { NumberCommaVisualTransformation(defaultCurrency.contains("INR")) },
                 label = { Text("Loan Amount ($currencySymbol)") },
+                prefix = { Text("$currencySymbol ") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = interestRate,
-                onValueChange = { interestRate = it },
+                onValueChange = { input ->
+                    val filtered = buildString {
+                        var hasDecimal = false
+                        for (char in input) {
+                            if (char.isDigit()) append(char)
+                            else if (char == '.' && !hasDecimal) {
+                                append(char)
+                                hasDecimal = true
+                            }
+                        }
+                    }
+                    interestRate = filtered
+                },
                 label = { Text("Interest Rate (%)") },
+                suffix = { Text("%") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = termInYears,
-                onValueChange = { termInYears = it },
+                onValueChange = { input ->
+                    val filtered = buildString {
+                        var hasDecimal = false
+                        for (char in input) {
+                            if (char.isDigit()) append(char)
+                            else if (char == '.' && !hasDecimal) {
+                                append(char)
+                                hasDecimal = true
+                            }
+                        }
+                    }
+                    termInYears = filtered
+                },
                 label = { Text("Loan Tenure (Years)") },
+                suffix = { Text("yr") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
 

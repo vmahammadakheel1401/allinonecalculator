@@ -14,8 +14,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.models.HistoryEntry
@@ -24,6 +28,95 @@ import com.example.storage.SettingsManager
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
+
+class NumberCommaVisualTransformation(private val isIndian: Boolean) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val originalText = text.text
+        if (originalText.isEmpty()) {
+            return TransformedText(text, OffsetMapping.Identity)
+        }
+
+        val parts = originalText.split(".")
+        val intPart = parts[0]
+        val fracPart = if (parts.size > 1) parts[1] else null
+        val hasTrailingDot = originalText.endsWith(".")
+
+        val formattedInt = StringBuilder()
+        val intLen = intPart.length
+
+        if (isIndian) {
+            // Indian numbering: last 3 digits, then groups of 2
+            var count = 0
+            for (i in intLen - 1 downTo 0) {
+                formattedInt.append(intPart[i])
+                count++
+                if (count == 3 && i > 0) {
+                    formattedInt.append(',')
+                } else if (count > 3 && (count - 3) % 2 == 0 && i > 0) {
+                    formattedInt.append(',')
+                }
+            }
+            formattedInt.reverse()
+        } else {
+            // International standard: groups of 3
+            var count = 0
+            for (i in intLen - 1 downTo 0) {
+                formattedInt.append(intPart[i])
+                count++
+                if (count % 3 == 0 && i > 0) {
+                    formattedInt.append(',')
+                }
+            }
+            formattedInt.reverse()
+        }
+
+        val formattedString = buildString {
+            append(formattedInt)
+            if (hasTrailingDot) {
+                append('.')
+            }
+            if (fracPart != null) {
+                append('.')
+                append(fracPart)
+            }
+        }
+
+        // Build 1-to-1 offset mapping
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                if (offset <= 0) return 0
+                val clampedOffset = offset.coerceIn(0, originalText.length)
+                
+                var transformed = 0
+                var originalSeen = 0
+
+                for (char in formattedString) {
+                    if (originalSeen == clampedOffset) break
+                    if (char != ',') {
+                        originalSeen++
+                    }
+                    transformed++
+                }
+                return transformed
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                if (offset <= 0) return 0
+                val clampedOffset = offset.coerceIn(0, formattedString.length)
+                
+                var originalCount = 0
+                for (i in 0 until clampedOffset) {
+                    if (formattedString[i] != ',') {
+                        originalCount++
+                    }
+                }
+                return originalCount.coerceIn(0, originalText.length)
+            }
+        }
+
+        return TransformedText(AnnotatedString(formattedString), offsetMapping)
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -164,13 +257,14 @@ fun FreelanceRateScreen(
                     }
                     income = filtered
                 },
+                visualTransformation = remember(isIndianLocale) { NumberCommaVisualTransformation(isIndianLocale) },
                 label = { Text("Desired Monthly Income ($currencySymbol)") },
                 prefix = { Text("$currencySymbol ") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("monthly_income_input"),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                placeholder = { Text(if (isIndianLocale) "e.g. 100000" else "e.g. 5000") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                placeholder = { Text(if (isIndianLocale) "e.g. 100,000" else "e.g. 5,000") },
                 singleLine = true
             )
 
@@ -200,13 +294,14 @@ fun FreelanceRateScreen(
                         validationError = "Monthly hours cannot exceed 744 hours (max 31 days × 24 hrs)."
                     }
                 },
+                visualTransformation = remember(isIndianLocale) { NumberCommaVisualTransformation(isIndianLocale) },
                 label = { Text("Monthly Billable Hours") },
                 supportingText = { Text("Maximum 744 hours (31 days × 24 hrs)") },
                 suffix = { Text("hrs") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("monthly_hours_input"),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 placeholder = { Text("e.g. 160") },
                 singleLine = true
             )

@@ -15,6 +15,7 @@ import com.example.calculators.FinanceCalculators
 import com.example.models.HistoryEntry
 import com.example.storage.AppDatabase
 import com.example.storage.SettingsManager
+import com.example.utilities.NumberCommaVisualTransformation
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
@@ -110,28 +111,68 @@ fun DiscountScreen(navController: NavController, database: AppDatabase, settings
 
             OutlinedTextField(
                 value = originalPrice,
-                onValueChange = { originalPrice = it },
+                onValueChange = { input ->
+                    val filtered = buildString {
+                        var hasDecimal = false
+                        for (char in input) {
+                            if (char.isDigit()) append(char)
+                            else if (char == '.' && !hasDecimal) {
+                                append(char)
+                                hasDecimal = true
+                            }
+                        }
+                    }
+                    originalPrice = filtered
+                },
+                visualTransformation = remember(defaultCurrency) { NumberCommaVisualTransformation(defaultCurrency.contains("INR")) },
                 label = { Text("Original Price ($currencySymbol)") },
+                prefix = { Text("$currencySymbol ") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = discountPercent,
-                onValueChange = { discountPercent = it },
+                onValueChange = { input ->
+                    val filtered = buildString {
+                        var hasDecimal = false
+                        for (char in input) {
+                            if (char.isDigit()) append(char)
+                            else if (char == '.' && !hasDecimal) {
+                                append(char)
+                                hasDecimal = true
+                            }
+                        }
+                    }
+                    discountPercent = filtered
+                },
                 label = { Text("Discount Percentage (%)") },
+                suffix = { Text("%") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = additionalDiscount,
-                onValueChange = { additionalDiscount = it },
+                onValueChange = { input ->
+                    val filtered = buildString {
+                        var hasDecimal = false
+                        for (char in input) {
+                            if (char.isDigit()) append(char)
+                            else if (char == '.' && !hasDecimal) {
+                                append(char)
+                                hasDecimal = true
+                            }
+                        }
+                    }
+                    additionalDiscount = filtered
+                },
                 label = { Text("Additional Discount (Optional %)") },
+                suffix = { Text("%") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
 

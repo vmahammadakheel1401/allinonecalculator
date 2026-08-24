@@ -32,12 +32,14 @@ import com.example.calculators.UnitConverter
 import com.example.calculators.UnitItem
 import com.example.models.HistoryEntry
 import com.example.storage.AppDatabase
+import com.example.storage.SettingsManager
+import com.example.utilities.NumberCommaVisualTransformation
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UnitConverterScreen(navController: NavController, database: AppDatabase) {
+fun UnitConverterScreen(navController: NavController, database: AppDatabase, settingsManager: SettingsManager? = null) {
     var selectedCategory by remember { mutableStateOf(UnitCategory.Length) }
     
     val unitsForCategory = UnitConverter.getUnitsForCategory(selectedCategory)
@@ -51,15 +53,14 @@ fun UnitConverterScreen(navController: NavController, database: AppDatabase) {
     val decimalFormat = remember { DecimalFormat("#.########") }
     val coroutineScope = rememberCoroutineScope()
 
+    val currency by settingsManager?.currencyFlow?.collectAsState(initial = "USD ($)") ?: remember { mutableStateOf("USD ($)") }
+    val isIndianLocale = currency.contains("INR")
+
     fun performConversion() {
         val value = fromValue.toDoubleOrNull()
         if (value != null) {
             val result = UnitConverter.convert(value, fromUnit, toUnit)
             toValue = decimalFormat.format(result)
-            
-            // Only save to history if it's a meaningful conversion triggered implicitly
-            // We can debounce or just save on swap/category change if we want, but for now we'll keep it simple
-            // and maybe not save on every keystroke to avoid spamming history.
         } else {
             toValue = ""
         }
@@ -108,10 +109,23 @@ fun UnitConverterScreen(navController: NavController, database: AppDatabase) {
                     UnitCard(
                         label = "FROM",
                         value = fromValue,
-                        onValueChange = { fromValue = it },
+                        onValueChange = { input ->
+                            val filtered = buildString {
+                                var hasDecimal = false
+                                for (char in input) {
+                                    if (char.isDigit()) append(char)
+                                    else if (char == '.' && !hasDecimal) {
+                                        append(char)
+                                        hasDecimal = true
+                                    }
+                                }
+                            }
+                            fromValue = filtered
+                        },
                         unit = fromUnit,
                         units = unitsForCategory,
-                        onUnitChange = { fromUnit = it }
+                        onUnitChange = { fromUnit = it },
+                        isIndian = isIndianLocale
                     )
                     UnitCard(
                         label = "TO",
@@ -120,7 +134,8 @@ fun UnitConverterScreen(navController: NavController, database: AppDatabase) {
                         unit = toUnit,
                         units = unitsForCategory,
                         onUnitChange = { toUnit = it },
-                        readOnly = true
+                        readOnly = true,
+                        isIndian = isIndianLocale
                     )
                 }
 
@@ -173,7 +188,8 @@ fun UnitCard(
     unit: UnitItem,
     units: List<UnitItem>,
     onUnitChange: (UnitItem) -> Unit,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    isIndian: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -205,7 +221,8 @@ fun UnitCard(
                         fontSize = 32.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    visualTransformation = remember(isIndian) { NumberCommaVisualTransformation(isIndian) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     readOnly = readOnly,
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)

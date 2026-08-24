@@ -31,6 +31,7 @@ import com.example.calculators.CurrencyConverter
 import com.example.models.HistoryEntry
 import com.example.storage.AppDatabase
 import com.example.storage.SettingsManager
+import com.example.utilities.NumberCommaVisualTransformation
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
@@ -156,7 +157,20 @@ fun CurrencyScreen(navController: NavController, database: AppDatabase, settings
                     CurrencyCard(
                         label = "FROM",
                         value = fromValue,
-                        onValueChange = { fromValue = it },
+                        onValueChange = { input ->
+                            val filtered = buildString {
+                                var hasDecimal = false
+                                for (char in input) {
+                                    if (char.isDigit()) {
+                                        append(char)
+                                    } else if (char == '.' && !hasDecimal) {
+                                        append(char)
+                                        hasDecimal = true
+                                    }
+                                }
+                            }
+                            fromValue = filtered
+                        },
                         currency = fromCurrency,
                         currencies = currencies,
                         onCurrencyChange = { fromCurrency = it }
@@ -254,7 +268,8 @@ fun CurrencyCard(
                         fontSize = 32.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    visualTransformation = remember(currency) { NumberCommaVisualTransformation(currency == "INR") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     readOnly = readOnly,
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
