@@ -12,10 +12,17 @@ class NumberCommaVisualTransformation(private val isIndian: Boolean = false) : V
             return TransformedText(text, OffsetMapping.Identity)
         }
 
-        val parts = originalText.split(".")
+        val isNegative = originalText.startsWith("-")
+        val textWithoutSign = if (isNegative) originalText.substring(1) else originalText
+
+        if (textWithoutSign.isEmpty()) {
+            return TransformedText(text, OffsetMapping.Identity)
+        }
+
+        val parts = textWithoutSign.split(".")
         val intPart = parts[0]
         val fracPart = if (parts.size > 1) parts[1] else null
-        val hasTrailingDot = originalText.endsWith(".")
+        val hasTrailingDot = textWithoutSign.endsWith(".")
 
         val formattedInt = StringBuilder()
         val intLen = intPart.length
@@ -47,6 +54,7 @@ class NumberCommaVisualTransformation(private val isIndian: Boolean = false) : V
         }
 
         val formattedString = buildString {
+            if (isNegative) append('-')
             append(formattedInt)
             if (hasTrailingDot) {
                 append('.')
@@ -57,7 +65,6 @@ class NumberCommaVisualTransformation(private val isIndian: Boolean = false) : V
             }
         }
 
-        // Build 1-to-1 offset mapping
         val offsetMapping = object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int {
                 if (offset <= 0) return 0
