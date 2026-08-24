@@ -240,11 +240,46 @@ fun SettingsScreen(navController: NavController, settingsManager: SettingsManage
         if (showPrivacyDialog) {
             AlertDialog(
                 onDismissRequest = { showPrivacyDialog = false },
-                title = { Text("Privacy Policy") },
-                text = { Text("This app does not collect any personal data. All calculations are performed locally on your device.") },
+                title = { Text("Privacy Policy & Data Safety") },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "1. Zero Personal Data Collection",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "This application does not collect, store, or transmit any personal identifiable information, device identifiers, or user analytics.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "2. On-Device Storage",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "All calculation history, custom units, and user preferences are stored strictly on your local device using secure encrypted Android SQLite/Room database storage.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "3. Network Usage",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Network access is used solely to fetch updated indicative exchange rates for the currency converter via public APIs. No user data is sent with these requests.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                },
                 confirmButton = {
                     TextButton(onClick = { showPrivacyDialog = false }) {
-                        Text("OK")
+                        Text("I Understand")
                     }
                 }
             )

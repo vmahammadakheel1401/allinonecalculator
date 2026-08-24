@@ -8,16 +8,21 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.models.HistoryEntry
 import com.example.storage.AppDatabase
 import com.example.utilities.NumberCommaVisualTransformation
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,6 +36,7 @@ fun BMIScreen(navController: NavController, database: AppDatabase) {
     val weight = weightInput.toDoubleOrNull() ?: 0.0
 
     var bmi by remember { mutableStateOf(0.0) }
+    val coroutineScope = rememberCoroutineScope()
     
     if (height > 0 && weight > 0) {
         bmi = if (isMetric) {
@@ -56,7 +62,10 @@ fun BMIScreen(navController: NavController, database: AppDatabase) {
             TopAppBar(
                 title = { Text("BMI Calculator") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(
+                        onClick = { navController.navigateUp() },
+                        modifier = Modifier.testTag("back_button")
+                    ) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -75,68 +84,71 @@ fun BMIScreen(navController: NavController, database: AppDatabase) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                FilterChip(
-                    selected = isMetric,
-                    onClick = { isMetric = true },
-                    label = { Text("Metric (kg, cm)") },
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                FilterChip(
-                    selected = !isMetric,
-                    onClick = { isMetric = false },
-                    label = { Text("Imperial (lbs, in)") }
-                )
+                SingleChoiceSegmentedButtonRow {
+                    SegmentedButton(
+                        selected = isMetric,
+                        onClick = { 
+                            isMetric = true 
+                            heightInput = ""
+                            weightInput = ""
+                        },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) {
+                        Text("Metric (cm / kg)")
+                    }
+                    SegmentedButton(
+                        selected = !isMetric,
+                        onClick = { 
+                            isMetric = false 
+                            heightInput = ""
+                            weightInput = ""
+                        },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) {
+                        Text("Imperial (in / lbs)")
+                    }
+                }
             }
 
             OutlinedTextField(
-                value = weightInput,
-                onValueChange = { input ->
-                    val filtered = buildString {
-                        var hasDecimal = false
-                        for (char in input) {
-                            if (char.isDigit()) append(char)
-                            else if (char == '.' && !hasDecimal) {
-                                append(char)
-                                hasDecimal = true
-                            }
-                        }
-                    }
-                    weightInput = filtered
-                },
-                visualTransformation = remember { NumberCommaVisualTransformation(false) },
-                label = { Text(if (isMetric) "Weight (kg)" else "Weight (lbs)") },
-                suffix = { Text(if (isMetric) "kg" else "lbs") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                value = heightInput,
+                onValueChange = { heightInput = it },
+                label = { Text(if (isMetric) "Height (cm)" else "Height (inches)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                visualTransformation = remember { NumberCommaVisualTransformation() },
+                modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = heightInput,
-                onValueChange = { input ->
-                    val filtered = buildString {
-                        var hasDecimal = false
-                        for (char in input) {
-                            if (char.isDigit()) append(char)
-                            else if (char == '.' && !hasDecimal) {
-                                append(char)
-                                hasDecimal = true
-                            }
-                        }
-                    }
-                    heightInput = filtered
-                },
-                visualTransformation = remember { NumberCommaVisualTransformation(false) },
-                label = { Text(if (isMetric) "Height (cm)" else "Height (inches)") },
-                suffix = { Text(if (isMetric) "cm" else "in") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                value = weightInput,
+                onValueChange = { weightInput = it },
+                label = { Text(if (isMetric) "Weight (kg)" else "Weight (lbs)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                visualTransformation = remember { NumberCommaVisualTransformation() },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    if (height > 0 && weight > 0 && bmi > 0) {
+                        coroutineScope.launch {
+                            database.historyDao().insert(
+                                HistoryEntry(
+                                    toolName = "BMI Calculator",
+                                    inputSummary = "Height: $heightInput ${if (isMetric) "cm" else "in"}, Weight: $weightInput ${if (isMetric) "kg" else "lbs"}",
+                                    result = "BMI: ${String.format("%.1f", bmi)} ($category)"
+                                )
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = height > 0 && weight > 0
+            ) {
+                Text("Save to History")
+            }
 
-            if (bmi > 0) {
+            if (bmi > 0.0) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -170,6 +182,33 @@ fun BMIScreen(navController: NavController, database: AppDatabase) {
                             )
                         }
                     }
+                }
+            }
+
+            // Google Play Health policy disclaimer card
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = "Medical Disclaimer",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "Disclaimer: For informational and general fitness tracking only. BMI is not a clinical diagnosis. Consult a healthcare provider for individual medical guidance.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

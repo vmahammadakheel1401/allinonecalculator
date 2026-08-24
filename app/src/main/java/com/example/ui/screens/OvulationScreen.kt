@@ -704,6 +704,33 @@ fun OvulationScreen(navController: NavController, database: AppDatabase) {
                 }
             }
 
+            // Google Play Medical & Reproductive Health policy disclaimer
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = "Medical Disclaimer",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "Disclaimer: Calculations are statistical estimates for tracking purposes only. Cycle lengths vary naturally. This tool must NOT be used for contraception or as professional medical advice.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
         }
 
