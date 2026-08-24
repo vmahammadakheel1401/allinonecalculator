@@ -2,12 +2,10 @@ package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -18,13 +16,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.models.HistoryEntry
 import com.example.storage.AppDatabase
@@ -48,7 +44,7 @@ fun SalaryScreen(
     settingsManager: SettingsManager
 ) {
     var inputType by remember { mutableStateOf(SalaryInputType.ANNUAL) }
-    var rawAmountInput by remember { mutableStateOf("90000") }
+    var rawAmountInput by remember { mutableStateOf("") }
 
     // Work schedule settings
     var hoursPerWeekInput by remember { mutableStateOf("40") }
@@ -61,6 +57,7 @@ fun SalaryScreen(
     var otherMonthlyDeductionsInput by remember { mutableStateOf("0") }
 
     var validationError by remember { mutableStateOf("") }
+    var hasCalculated by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
@@ -82,13 +79,6 @@ fun SalaryScreen(
                 currency.substringAfter("(").substringBefore(")")
             }
             else -> "$"
-        }
-    }
-
-    // Default amount presets when locale changes
-    LaunchedEffect(isIndianLocale) {
-        if (isIndianLocale && rawAmountInput == "90000") {
-            rawAmountInput = "1200000"
         }
     }
 
@@ -156,15 +146,17 @@ fun SalaryScreen(
     fun calculate() {
         if (!isValid) {
             validationError = "Please enter a valid salary amount greater than zero."
+            hasCalculated = false
             return
         }
         validationError = ""
+        hasCalculated = true
         focusManager.clearFocus()
         saveHistory()
     }
 
     fun reset() {
-        rawAmountInput = if (isIndianLocale) "1200000" else "90000"
+        rawAmountInput = ""
         inputType = SalaryInputType.ANNUAL
         hoursPerWeekInput = "40"
         daysPerWeekInput = "5"
@@ -173,6 +165,7 @@ fun SalaryScreen(
         otherMonthlyDeductionsInput = "0"
         showDeductions = false
         validationError = ""
+        hasCalculated = false
         focusManager.clearFocus()
     }
 
@@ -223,14 +216,7 @@ fun SalaryScreen(
                                 selected = inputType == type,
                                 onClick = {
                                     inputType = type
-                                    // Adjust default placeholder value if needed
-                                    if (type == SalaryInputType.HOURLY && rawAmountInput.length > 4) {
-                                        rawAmountInput = "45"
-                                    } else if (type == SalaryInputType.MONTHLY && rawAmountInput.length > 7) {
-                                        rawAmountInput = if (isIndianLocale) "100000" else "7500"
-                                    } else if (type == SalaryInputType.ANNUAL && rawAmountInput.length <= 3) {
-                                        rawAmountInput = if (isIndianLocale) "1200000" else "90000"
-                                    }
+                                    if (validationError.isNotEmpty()) validationError = ""
                                 },
                                 shape = SegmentedButtonDefaults.itemShape(index = index, count = SalaryInputType.values().size)
                             ) {
@@ -266,6 +252,22 @@ fun SalaryScreen(
                                 }
                             )
                         },
+                        placeholder = {
+                            Text(
+                                when (inputType) {
+                                    SalaryInputType.ANNUAL -> if (isIndianLocale) "e.g. 1,200,000" else "e.g. 90,000"
+                                    SalaryInputType.MONTHLY -> if (isIndianLocale) "e.g. 100,000" else "e.g. 7,500"
+                                    SalaryInputType.HOURLY -> "e.g. 45"
+                                }
+                            )
+                        },
+                        trailingIcon = {
+                            if (rawAmountInput.isNotEmpty()) {
+                                IconButton(onClick = { rawAmountInput = "" }) {
+                                    Icon(Icons.Filled.Clear, contentDescription = "Clear input", modifier = Modifier.size(20.dp))
+                                }
+                            }
+                        },
                         prefix = { Text("$currencySymbol ") },
                         suffix = {
                             Text(
@@ -293,15 +295,15 @@ fun SalaryScreen(
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         val presets = when (inputType) {
                             SalaryInputType.ANNUAL -> {
-                                if (isIndianLocale) listOf("500000" to "5L", "800000" to "8L", "1200000" to "12L", "1800000" to "18L", "2500000" to "25L", "4000000" to "40L")
-                                else listOf("45000" to "45k", "60000" to "60k", "80000" to "80k", "100000" to "100k", "125000" to "125k", "150000" to "150k")
+                                if (isIndianLocale) listOf("500000" to "₹5L", "800000" to "₹8L", "1200000" to "₹12L", "1800000" to "₹18L", "2500000" to "₹25L", "4000000" to "₹40L")
+                                else listOf("45000" to "$45k", "60000" to "$60k", "80000" to "$80k", "100000" to "$100k", "125000" to "$125k", "150000" to "$150k")
                             }
                             SalaryInputType.MONTHLY -> {
-                                if (isIndianLocale) listOf("40000" to "40k", "65000" to "65k", "100000" to "1L", "150000" to "1.5L", "200000" to "2L")
-                                else listOf("3500" to "3.5k", "5000" to "5k", "7500" to "7.5k", "10000" to "10k", "12500" to "12.5k")
+                                if (isIndianLocale) listOf("40000" to "₹40k", "65000" to "₹65k", "100000" to "₹1L", "150000" to "₹1.5L", "200000" to "₹2L")
+                                else listOf("3500" to "$3.5k", "5000" to "$5k", "7500" to "$7.5k", "10000" to "$10k", "12500" to "$12.5k")
                             }
                             SalaryInputType.HOURLY -> {
-                                listOf("20" to "$20", "30" to "$30", "45" to "$45", "60" to "$60", "80" to "$80", "100" to "$100")
+                                listOf("20" to "$20/hr", "30" to "$30/hr", "45" to "$45/hr", "60" to "$60/hr", "80" to "$80/hr", "100" to "$100/hr")
                             }
                         }
 
@@ -309,7 +311,10 @@ fun SalaryScreen(
                             item {
                                 FilterChip(
                                     selected = rawAmountInput == value,
-                                    onClick = { rawAmountInput = value },
+                                    onClick = {
+                                        rawAmountInput = value
+                                        if (validationError.isNotEmpty()) validationError = ""
+                                    },
                                     label = { Text(label) }
                                 )
                             }
@@ -726,6 +731,39 @@ fun SalaryScreen(
                         }
                     }
                 }
+            } else {
+                // Helpful guidance card when empty
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.Payments,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Text(
+                            text = "Enter Your Salary",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Type your annual, monthly, or hourly rate or select a quick preset above to view your take-home pay and full payout breakdown.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -769,5 +807,3 @@ private fun PayoutRow(
         }
     }
 }
-
-
