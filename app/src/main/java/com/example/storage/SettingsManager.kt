@@ -21,11 +21,11 @@ class SettingsManager(private val context: Context) {
     private fun getDefaultCurrency(): String {
         val country = Locale.getDefault().country
         return when (country) {
-            "IN" -> "INR"
-            "GB" -> "GBP"
-            "JP" -> "JPY"
-            "DE", "FR", "IT", "ES", "NL", "BE", "IE", "GR", "PT", "FI", "AT" -> "EUR"
-            else -> "USD"
+            "IN" -> "INR (₹)"
+            "GB" -> "GBP (£)"
+            "JP" -> "JPY (¥)"
+            "DE", "FR", "IT", "ES", "NL", "BE", "IE", "GR", "PT", "FI", "AT" -> "EUR (€)"
+            else -> "USD ($)"
         }
     }
 
