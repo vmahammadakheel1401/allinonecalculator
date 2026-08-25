@@ -15,11 +15,15 @@ import com.example.ui.theme.AppTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.isSystemInDarkTheme
+import com.google.android.gms.ads.MobileAds
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Initialize Google Mobile Ads SDK
+        MobileAds.initialize(this) {}
         
         val database = AppDatabase.getDatabase(this)
         val settingsManager = SettingsManager(this)

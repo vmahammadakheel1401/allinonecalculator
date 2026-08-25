@@ -20,24 +20,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.storage.AppDatabase
 import com.example.storage.SettingsManager
+import com.example.ui.components.BannerAdView
 import com.example.ui.screens.*
-
-@Composable
-fun BannerAdPlaceholder() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "Banner Ad Placeholder",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
 
 @Composable
 fun AppNavigation(
@@ -51,7 +35,7 @@ fun AppNavigation(
     Scaffold(
         bottomBar = {
             Column {
-                BannerAdPlaceholder()
+                BannerAdView()
                 if (currentRoute in listOf(Screen.Home.route, Screen.History.route, Screen.Settings.route)) {
                     BottomNavigationBar(navController = navController, currentRoute = currentRoute)
                 }
